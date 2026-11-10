@@ -1,59 +1,93 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Bloodline
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**Blood donation coordination with donor, hospital and administrator workflows.**
 
-## About Laravel
+[Overview](#overview) · [Local setup](#local-setup) · [Code guide](#code-guide) · [Verification](#verification)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Overview
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+A Laravel application for managing blood requests, donor participation and donation campaigns. It brings public request listings together with separate workspaces for donors, hospitals and administrators.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Features
 
-## Learning Laravel
+- Public blood requests, urgent requests, campaigns and hospital map.
+- Donor registration, profiles, donation history and reward points.
+- Hospital dashboards for requests, donation campaigns and blood transport vehicles.
+- Role-based access for donors, hospitals and administrators.
+- Donor matching by blood type and location, with notification preferences.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Technology
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+| Layer | Stack |
+| --- | --- |
+| Backend | PHP `^8.2` · Laravel `^12.0` |
+| Interface and tooling | Blade · Tailwind CSS 4 · Vite 7 |
+| Data | Eloquent ORM · SQLite by default; other configured drivers are available |
 
-## Laravel Sponsors
+Version constraints above come from [composer.json](composer.json) and [package.json](package.json). Use a PHP runtime compatible with `composer.lock`, Composer 2, and a Node.js/npm version compatible with the declared asset tooling. Enable the PHP extensions required by Composer and the selected database driver.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Local setup
 
-### Premium Partners
+```bash
+git clone https://github.com/Moelnabawy8/bloodline.git
+cd bloodline
+composer install
+cp .env.example .env
+php artisan key:generate
+npm install
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Create the SQLite file if it does not already exist, and point `DB_DATABASE` in your local `.env` to its absolute path:
 
-## Contributing
+```bash
+php -r "file_exists('database/database.sqlite') || touch('database/database.sqlite');"
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Keep `DB_CONNECTION=sqlite` for this setup. Set `APP_URL=http://127.0.0.1:8000`. For local mail inspection, set `MAIL_MAILER=log` instead of configuring a live mail provider.
 
-## Code of Conduct
+```bash
+php artisan migrate
+php artisan storage:link
+npm run build
+php artisan serve
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Open [the local application](http://127.0.0.1:8000). For asset hot reload, run `npm run dev` in a second terminal while the PHP server remains running.
 
-## Security Vulnerabilities
+## Application areas
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+| Area | Entry point | Purpose |
+| --- | --- | --- |
+| Public | `/requests`, `/urgent`, `/campaigns`, `/map` | Discover requests and campaigns |
+| Donor | `/donor/dashboard` | Review requests and manage donations |
+| Hospital | `/hospital/dashboard` | Manage blood requests and vehicles |
+| Administrator | `/admin/dashboard` | Manage hospital accounts |
 
-## License
+Use `/register` to create a donor account. Hospital and administrator accounts follow separate provisioning flows; inspect the seeders before using them in a local demo.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Code guide
+
+| Path | Responsibility |
+| --- | --- |
+| [`routes/web.php`](routes/web.php) | Public pages and role-specific routes |
+| [`app/Services/DonorMatcher.php`](app/Services/DonorMatcher.php) | Donor matching and distance calculations |
+| [`app/Models/`](app/Models/) | Requests, donors, hospitals, campaigns and donations |
+| [`tests/Feature/`](tests/Feature/) | Smoke tests and geographic matching tests |
+
+## Verification
+
+Feature tests cover public pages, authentication, role access, donation flows and geographic matching. See [SmokeTest](tests/Feature/SmokeTest.php) and [GeoMatchingTest](tests/Feature/GeoMatchingTest.php).
+
+Use an isolated testing database and review [phpunit.xml](phpunit.xml) before running the suite. Database-resetting tests must point to disposable data.
+
+```bash
+php artisan test
+```
+
+To check PHP formatting without modifying files:
+
+```bash
+./vendor/bin/pint --test
+```
+
+Build the front-end assets with `npm run build` after changing JavaScript, CSS or templates. Keep local configuration in `.env` and commit only configuration examples.
